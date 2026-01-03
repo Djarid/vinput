@@ -152,7 +152,7 @@ vinput/
 
 ### Input Engine (input_engine.py)
 - VirtualXboxController class: Initialize uinput.UInput with Xbox 360 capabilities
-- Implement tap_button(), hold_button(duration), move_stick(x, y, duration)
+- Implement tap_button(duration), move_stick(x, y, duration)
 - Use asyncio.sleep() for timing to maintain non-blocking behavior
 - Ensure AbsInfo struct ranges are correct (see above)
 

@@ -160,52 +160,6 @@ class VirtualXboxController:
             logger.error(f"Failed to tap button {button_name}: {e}")
             raise
 
-    async def hold_button(self, button_name: str, duration_ms: int = 1000) -> None:
-        """
-        Hold a button for a specified duration.
-
-        Args:
-            button_name: Button name
-            duration_ms: Hold duration in milliseconds
-        """
-        self._ensure_initialized()
-
-        button_map = {
-            'A': ecodes.BTN_SOUTH,
-            'B': ecodes.BTN_EAST,
-            'X': ecodes.BTN_NORTH,
-            'Y': ecodes.BTN_WEST,
-            'LB': ecodes.BTN_TL,
-            'RB': ecodes.BTN_TR,
-            'Back': ecodes.BTN_SELECT,
-            'Start': ecodes.BTN_START,
-            'Guide': ecodes.BTN_MODE,
-            'L3': ecodes.BTN_THUMBL,
-            'R3': ecodes.BTN_THUMBR,
-        }
-
-        if button_name not in button_map:
-            raise ValueError(f"Unknown button: {button_name}")
-
-        button_code = button_map[button_name]
-
-        try:
-            # Press
-            self.ui.write(ecodes.EV_KEY, button_code, 1)
-            self.ui.syn()
-            
-            # Wait
-            await asyncio.sleep(duration_ms / 1000.0)
-            
-            # Release
-            self.ui.write(ecodes.EV_KEY, button_code, 0)
-            self.ui.syn()
-            
-            logger.debug(f"Held button: {button_name} for {duration_ms}ms")
-        except Exception as e:
-            logger.error(f"Failed to hold button {button_name}: {e}")
-            raise
-
     async def move_stick(
         self, stick_name: str, x: int, y: int, duration_ms: int = 500
     ) -> None:

@@ -140,11 +140,6 @@ class VinputOrchestrator:
                 duration = action.get('duration', 50)
                 await self.controller.tap_button(button, duration_ms=duration)
             
-            elif action_type == 'button_hold':
-                button = action.get('button')
-                duration = action.get('duration', 1000)
-                await self.controller.hold_button(button, duration_ms=duration)
-            
             elif action_type == 'stick':
                 stick = action.get('stick')
                 x = action.get('x', 0)

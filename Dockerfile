@@ -78,7 +78,6 @@ RUN python -m venv /home/vinput/.venv && \
     pip install --upgrade pip setuptools wheel
 
 # Install Python dependencies (pinned versions)
-# Note: onnxruntime with Vitis AI EP must be obtained separately
 RUN . /home/vinput/.venv/bin/activate && \
     pip install --no-cache-dir \
         numpy==1.24.3 \
@@ -86,8 +85,42 @@ RUN . /home/vinput/.venv/bin/activate && \
         webrtcvad==2.0.10 \
         evdev==1.5.0 \
         scipy==1.10.1 \
-        pyyaml==6.0.1 && \
-    pip install --no-cache-dir pytest pytest-cov
+        pyyaml==6.0.1
+
+# Install ONNX Runtime with Vitis AI Execution Provider (if available)
+# AMD does not provide stable direct download URLs. To enable NPU acceleration:
+#
+# 1. Download wheel from AMD Developer Portal:
+#    https://www.amd.com/en/developer/resources/ryzen-ai-software.html
+#    Look for: Ryzen AI Software Platform → Downloads → ONNX Runtime
+#    File: onnxruntime_vitisai-1.17.0-cp310-cp310-linux_x86_64.whl
+#
+# 2. Place wheel in project root: /home/jasonh/git/vinput/
+#
+# 3. Rebuild container: podman-compose build
+#
+# The build will auto-detect and install the wheel if present.
+# If not present, vinput falls back to CPU inference (no NPU acceleration).
+#
+RUN . /home/vinput/.venv/bin/activate && \
+    if [ -f /home/vinput/vinput/onnxruntime_vitisai*.whl ]; then \
+        echo "✓ Installing ONNX Runtime with Vitis AI EP from local wheel..."; \
+        pip install --no-cache-dir /home/vinput/vinput/onnxruntime_vitisai*.whl && \
+        echo "✓ NPU acceleration enabled"; \
+    else \
+        echo "⚠ ONNX Runtime with Vitis AI EP not found in project root."; \
+        echo "  NPU acceleration disabled. CPU inference will be used."; \
+        echo "  To enable NPU: Download wheel from AMD, place in project root, rebuild."; \
+        echo "  See: https://www.amd.com/en/developer/resources/ryzen-ai-software.html"; \
+    fi
+
+# Install development dependencies (for testing)
+RUN . /home/vinput/.venv/bin/activate && \
+    pip install --no-cache-dir \
+        pytest==7.4.3 \
+        pytest-asyncio==0.21.1 \
+        pytest-cov==4.1.0 \
+        pytest-mock==3.12.0
 
 # Create models directory
 RUN mkdir -p models config

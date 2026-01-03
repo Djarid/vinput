@@ -6,12 +6,12 @@ commands:
     duration: 50
   
   crouch:
-    type: button_hold
+    type: button
     button: B
     duration: 2000
   
   sprint:
-    type: button_hold
+    type: button
     button: A
     duration: 3000
   
@@ -26,12 +26,12 @@ commands:
     duration: 50
   
   aim:
-    type: button_hold
+    type: button
     button: LB
     duration: 2000
   
   fire:
-    type: button_hold
+    type: button
     button: RB
     duration: 1000
   

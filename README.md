@@ -114,7 +114,7 @@ commands:
     duration: 50
   
   crouch:
-    type: button_hold
+    type: button
     button: B
     duration: 2000
   
@@ -201,8 +201,7 @@ commands:
 
 | Type | Params | Description |
 |------|--------|-------------|
-| `button` | `button`, `duration` | Press and release a button |
-| `button_hold` | `button`, `duration` | Hold button for duration (ms) |
+| `button` | `button`, `duration` | Press and release button (duration in ms) |
 | `stick` | `stick`, `x`, `y`, `duration` | Move stick to (x,y) and hold |
 | `trigger` | `trigger`, `value` | Set trigger value (0-255) |
 | `dpad` | `direction` | Move D-Pad (up/down/left/right/etc) |
@@ -393,15 +392,36 @@ Each engine follows a pattern:
 3. `async method()` - Main operation
 4. `shutdown()` - Cleanup
 
-### Testing Without NPU
+## Testing
 
-To test the audio and input layers without NPU hardware:
+vinput includes comprehensive unit tests for all components. **Always run tests in containers to avoid version conflicts.**
 
-1. Comment out inference in main.py
-2. Replace with mock transcription:
-   ```python
-   text = "jump"  # Hardcoded for testing
-   ```
+### Run Tests
+
+```bash
+# Run all tests (containerized - safe)
+podman-compose run --rm vinput-test
+
+# Run specific test file
+podman-compose run --rm vinput-test pytest tests/test_audio_engine.py
+
+# With coverage report
+podman-compose run --rm vinput-test pytest --cov=src --cov-report=html
+```
+
+See [TESTING.md](TESTING.md) for complete testing guide.
+
+**⚠️ WARNING**: Do NOT install `requirements-dev.txt` in your production environment! Test dependencies may conflict with pinned runtime versions and cause hardware failures.
+
+### Manual Installation Validation
+
+To verify your installation works:
+
+```bash
+python test_installation.py
+```
+
+This runs integration tests without mocks (requires hardware access).
 
 ## Contributing
 

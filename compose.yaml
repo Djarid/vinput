@@ -114,6 +114,20 @@ services:
       retries: 3
       start_period: 5s
 
+  # Test runner service (isolated test environment)
+  vinput-test:
+    container_name: vinput-test
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vinput:latest
+    command: ["pytest", "-v", "--tb=short"]
+    volumes:
+      - .:/home/vinput/vinput:rw
+    # No device access needed for unit tests (use mocks)
+    environment:
+      - PYTEST_CURRENT_TEST
+
 # Shared network for potential multi-container setup
 networks:
   vinput-net:

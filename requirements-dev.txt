@@ -1,0 +1,31 @@
+# Development dependencies for vinput
+# WARNING: Do NOT install this in your native environment!
+# These versions may conflict with pinned runtime versions.
+#
+# Instead, run tests in containers:
+#   podman-compose run --rm vinput-test
+#
+# Or create isolated test venv:
+#   python -m venv .venv-test
+#   source .venv-test/bin/activate
+#   pip install -r requirements-dev.txt
+#   pytest
+
+# Core dependencies
+-r requirements.txt
+
+# Testing
+pytest==7.4.3           # Test framework
+pytest-asyncio==0.21.1  # Async test support
+pytest-cov==4.1.0       # Coverage reporting
+pytest-mock==3.12.0     # Enhanced mocking
+
+# Code quality
+black==23.12.1          # Code formatter
+flake8==6.1.0           # Linting
+mypy==1.7.1             # Type checking
+isort==5.13.2           # Import sorting
+
+# Documentation
+sphinx==7.2.6           # Documentation generator
+sphinx-rtd-theme==2.0.0 # Read the Docs theme

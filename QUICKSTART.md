@@ -138,7 +138,7 @@ commands:
   sprint forward:
     type: sequence
     actions:
-      - type: button_hold
+      - type: button
         button: A
         duration: 500
       - type: stick
