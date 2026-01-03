@@ -1,0 +1,96 @@
+commands:
+  # Gaming examples
+  jump:
+    type: button
+    button: A
+    duration: 50
+  
+  crouch:
+    type: button_hold
+    button: B
+    duration: 2000
+  
+  sprint:
+    type: button_hold
+    button: A
+    duration: 3000
+  
+  reload:
+    type: button
+    button: X
+    duration: 50
+  
+  melee:
+    type: button
+    button: Y
+    duration: 50
+  
+  aim:
+    type: button_hold
+    button: LB
+    duration: 2000
+  
+  fire:
+    type: button_hold
+    button: RB
+    duration: 1000
+  
+  # Stick movements
+  move forward:
+    type: stick
+    stick: left
+    x: 0
+    y: -32768
+    duration: 1000
+  
+  move back:
+    type: stick
+    stick: left
+    x: 0
+    y: 32767
+    duration: 1000
+  
+  move left:
+    type: stick
+    stick: left
+    x: -32768
+    y: 0
+    duration: 1000
+  
+  move right:
+    type: stick
+    stick: left
+    x: 32767
+    y: 0
+    duration: 1000
+  
+  # D-Pad examples
+  up:
+    type: dpad
+    direction: up
+  
+  down:
+    type: dpad
+    direction: down
+  
+  left:
+    type: dpad
+    direction: left
+  
+  right:
+    type: dpad
+    direction: right
+  
+  # Complex sequences
+  combo attack:
+    type: sequence
+    actions:
+      - type: button
+        button: X
+        duration: 100
+      - type: button
+        button: Y
+        duration: 100
+      - type: button
+        button: A
+        duration: 100

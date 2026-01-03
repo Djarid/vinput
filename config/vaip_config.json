@@ -1,0 +1,12 @@
+{
+  "model_type": "int8",
+  "target_device": "amdxdna",
+  "compiler_flags": {
+    "enable_context_caching": true,
+    "optimization_level": 3
+  },
+  "quantization": {
+    "enabled": true,
+    "precision": "int8"
+  }
+}

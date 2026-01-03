@@ -1,0 +1,54 @@
+# vinput - Pinned Dependency Versions
+# Based on AMD Strix Halo + XDNA 2 NPU white paper specifications
+# See CONTAINERIZATION.md for version matrix and compatibility notes
+
+# Core array operations - float32 contiguity critical for DMA/IOMMU
+numpy==1.24.3
+# Python 3.9-3.11 compatible, AVX-512 support (x86-64-v4)
+# DON'T upgrade: 2.0+ changes memory layout, breaks tensor contiguity
+
+# Audio capture from ALSA - low-latency critical
+sounddevice==0.4.6
+# Pinned for consistent callback timing (jitter < 1ms)
+
+# Voice Activity Detection - webRTC standard
+webrtcvad==2.0.10
+# No newer versions; this is the reference implementation
+# 20ms frame timing critical for VAD state machine
+
+# Virtual input device via uinput - exact AbsInfo ranges critical
+evdev==1.5.0
+# Must support AbsInfo with min/max -32768/32767 for Xbox sticks
+# Newer versions have different uinput initialization
+
+# Optional: Audio signal processing (for future enhancements)
+scipy==1.10.1
+# Compatible with numpy 1.24.3; used for optional filtering
+
+# YAML configuration parsing - stable format
+pyyaml==6.0.1
+# Latest stable; no breaking changes since 6.0
+
+# ⚠️  CRITICAL: ONNX Runtime with Vitis AI Execution Provider
+# This is NOT in standard PyPI - must be obtained separately:
+#
+# Option 1: Download from AMD Developer Lounge
+#   https://www.amd.com/en/developer/resources/ryzen-ai-software.html
+#   Look for: onnxruntime_vitisai-<version>-cp<python_ver>-<platform>.whl
+#
+# Option 2: Build from source (recommended for reproducibility)
+#   git clone https://github.com/amd/RyzenAI-SW.git
+#   Follow build instructions for your kernel/XRT version
+#
+# Version Requirements:
+#   - Must match kernel amdxdna driver (6.14+)
+#   - Must match XRT version (Xilinx Runtime)
+#   - Must match Vitis AI compiler version
+#   - See CONTAINERIZATION.md for tested version matrix
+#
+# Installation command (after download):
+#   pip install ./onnxruntime_vitisai-*.whl
+#
+# Verification:
+#   python -c "import onnxruntime as ort; print(ort.get_available_providers())"
+#   Should show: ['VitisAIExecutionProvider', 'CPUExecutionProvider', ...]

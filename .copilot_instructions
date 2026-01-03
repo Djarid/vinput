@@ -1,0 +1,212 @@
+# Copilot Instructions for Voice -> uinput Automation Tool (AMD Strix Halo)
+
+## Executive Summary
+This is a voice-driven heterogeneous computing system for the AMD Strix Halo platform running CachyOS (Arch Linux). The system leverages the XDNA 2 Neural Processing Unit (NPU) for efficient speech recognition, paired with Linux kernel-level input injection via uinput to enable universal OS automation on Wayland.
+
+## Hardware Target
+- **Platform**: AMD Strix Halo (MS-S1) with Ryzen AI Max processor
+- **NPU**: XDNA 2 Neural Processing Unit (up to 50 TOPS)
+- **CPU**: Zen 5 cores
+- **GPU**: RDNA 3.5 integrated
+- **Memory**: LPDDR5X (unified architecture)
+- **OS**: CachyOS (Arch Linux optimized for x86-64-v4)
+
+## Architecture Layers
+
+| Layer | Component | Technology | Target | Purpose |
+|-------|-----------|-----------|--------|---------|
+| Acquisition | Audio Buffer & VAD | sounddevice, webrtcvad, numpy | CPU Core 0 | Captures audio, filters silence/noise |
+| Inference | Speech-to-Text | ONNX Runtime, Vitis AI EP, Quantized Whisper | NPU (XDNA 2) | Converts audio to text with HW acceleration |
+| Logic | Command Parser | Python match/case, NLP heuristics | CPU Core 1 | Maps text to semantic actions |
+| Actuation | Event Injection | python-evdev, uinput, Xbox 360 Virtual Controller | Kernel Space | Injects synthetic input events |
+
+## NPU Software Stack Requirements
+
+### Kernel Mode Driver (KMD)
+- **Component**: amdxdna kernel module
+- **Status**: Mainlined in Linux 6.14+
+- **Verification**: Check `dmesg | grep amdxdna` and confirm `/dev/accel/accel0` exists
+- **Requirement**: CachyOS kernel must be 6.14 or newer
+
+### User Mode Driver (UMD)
+- **XRT**: Xilinx Runtime (compile from AUR or source)
+- **Shim**: libamdxdna.so (xrt-plugin-amdxdna or similar in AUR)
+- **Firmware**: NPU firmware blobs (17f0_*.bin) in /lib/firmware/amdnpu/
+- **Verification Tool**: xrt-smi examine (must list the NPU device)
+
+### Python Middleware
+- **ONNX Runtime Vitis AI**: Custom wheel with VitisAI Execution Provider (not standard PyPI)
+- **Vitis AI Execution Provider (VOE)**: Compiles ONNX graph to .xmodel format
+- **Configuration**: vaip_config.json defines compiler settings
+- **FPGA Overlay**: .xclbin file (typically 1x4 or 4x4 configuration for Strix Halo)
+- **Critical Environment Variable**: XLNX_VART_FIRMWARE must point to correct .xclbin
+
+## Critical Constraints & Design Patterns
+
+### Static Shape Requirement
+- The XDNA 2 compiler generates fixed dataflow graphs
+- **All audio input must be padded/truncated to exactly 480,000 samples (30 seconds at 16kHz)**
+- Use `np.pad()` with mode='constant' to enforce this
+- This ensures mel-spectrogram tensors match the compiled graph expectations
+
+### Memory Management for DMA
+- Input tensors must be contiguous in memory for NPU access via IOMMU
+- **Mandatory**: Use `np.ascontiguousarray()` on all audio data before inference
+- Failure to do this causes IOMMU faults and silent CPU fallback
+
+### ONNX Runtime Session Setup
+- Initialize with provider list: `['VitisAIExecutionProvider', 'CPUExecutionProvider']`
+- The Vitis AI EP must be primary; CPU is fallback for unsupported ops
+- Implement context caching via cache_dir and cache_key in provider_options to avoid warm-up latency on subsequent runs
+
+### Audio Processing Pipeline
+- **Sounddevice block size**: 1024-2048 frames (~60-120ms) for latency/CPU balance
+- **VAD (Voice Activity Detection)**: Use webrtcvad to detect speech boundaries
+- **Quantization**: Whisper must be Int8 or BF16 quantized; use pre-quantized models from AMD Model Zoo
+- **Preprocessing**: Convert to mel-spectrogram with float32 dtype
+
+## Linux Input Subsystem & Wayland Bypass
+
+### Why uinput Instead of X11 Protocol Extensions
+- **Wayland Security Model**: Prevents X11-style automation (xdotool, pyautogui are restricted)
+- **Kernel-Level Solution**: uinput events originate below the compositor layer
+- **Result**: Wayland perceives events as coming from physical USB devices, bypassing security isolation
+- **Compatibility**: Works with all Wayland compositors (KWin, Mutter, Hyprland) and X11
+
+### Virtual Xbox 360 Controller Emulation
+This is required for Steam/Proton game compatibility:
+
+**Device Identification**:
+- Vendor ID: 0x045e (Microsoft)
+- Product ID: 0x028e (Xbox 360 Controller)
+
+**Button Mapping (evdev codes)**:
+- BTN_SOUTH (A), BTN_EAST (B), BTN_NORTH (X), BTN_WEST (Y)
+- BTN_TL (LB), BTN_TR (RB)
+- BTN_SELECT (Back), BTN_START (Start), BTN_MODE (Guide)
+- BTN_THUMBL (L3), BTN_THUMBR (R3)
+
+**Axis Configuration (Critical)**:
+- Left Stick (ABS_X, ABS_Y): min=-32768, max=32767, fuzz=16, flat=128
+- Right Stick (ABS_RX, ABS_RY): min=-32768, max=32767, fuzz=16, flat=128
+- Triggers (ABS_Z, ABS_RZ): min=0, max=255
+- D-Pad (ABS_HAT0X, ABS_HAT0Y): Use standard hat definitions
+- **Incorrect axis ranges cause stick drift/erratic behavior in games**
+
+### udev Permissions
+Create `/etc/udev/rules.d/99-uinput.rules`:
+```
+KERNEL=="uinput", SUBSYSTEM=="misc", OPTIONS+="static_node=uinput", TAG+="uaccess"
+```
+This allows the current user to create virtual input devices without sudo.
+
+## Concurrency Architecture (asyncio)
+
+### Threading Model
+- **Audio Thread**: sounddevice callback continuously fills thread-safe asyncio.Queue with raw frames
+- **Inference Worker**: Async coroutine consumes queue, offloads session.run() to ThreadPoolExecutor (prevents GIL blocking event loop)
+- **Command Dispatcher**: Lightweight parsing matches text to actions, triggers uinput events
+
+### Audio-to-Command Flow
+1. Sounddevice continuously captures audio → asyncio.Queue
+2. VAD detector monitors queue, accumulates frames while speech is detected
+3. Silence detected → packaged audio sent to ThreadPoolExecutor.run_in_executor()
+4. Inference returns transcription text
+5. Command matcher translates text (e.g., "jump") → uinput event sequence (e.g., BTN_SOUTH press/release)
+6. Loop restarts, listening for next command
+
+## Project Directory Structure
+
+```
+vinput/
+├── config/
+│   ├── vaip_config.json        # Vitis AI compiler settings
+│   └── commands.yaml           # User-definable voice command mappings
+├── models/
+│   ├── encoder_int8.onnx       # Quantized Whisper encoder
+│   └── decoder_int8.onnx       # Quantized Whisper decoder
+├── src/
+│   ├── audio_engine.py         # Async audio capture, VAD, preprocessing
+│   ├── inference_engine.py     # ONNX Runtime wrapper with Vitis AI EP
+│   ├── input_engine.py         # uinput/evdev virtual device classes
+│   └── main.py                 # Orchestrator, asyncio event loop
+├── setup/
+│   ├── setup_strix_env.sh      # Environment validation & udev setup
+│   └── 99-uinput.rules         # udev rules (copied to /etc/udev/rules.d/)
+└── requirements.txt
+```
+
+## Code Guidelines & Patterns
+
+### Audio Engine (audio_engine.py)
+- Use `sounddevice.InputStream` with a callback to fill asyncio.Queue
+- Implement `call_soon_threadsafe()` to bridge thread-safe queue from audio callback
+- Use webrtcvad with 16kHz sample rate, 20ms frames
+- Accumulate frames into a buffer while VAD detects speech activity
+
+### Inference Engine (inference_engine.py)
+- Preprocess audio: pad/truncate to 480,000 samples, convert to float32, ensure contiguity
+- Initialize onnxruntime.InferenceSession with Vitis AI EP as primary provider
+- Implement greedy decoding loop using encoder → decoder sessions
+- Wrap long-running inference calls with `loop.run_in_executor()` to prevent blocking
+
+### Input Engine (input_engine.py)
+- VirtualXboxController class: Initialize uinput.UInput with Xbox 360 capabilities
+- Implement tap_button(), hold_button(duration), move_stick(x, y, duration)
+- Use asyncio.sleep() for timing to maintain non-blocking behavior
+- Ensure AbsInfo struct ranges are correct (see above)
+
+### Main Orchestrator (main.py)
+- Initialize WhisperNPU and VirtualXboxController in __init__
+- Create asyncio.Queue for audio frames
+- Implement process_audio() coroutine that consumes queue
+- Match transcription text against command dictionary
+- Wrap in try/finally to ensure cleanup (close uinput device)
+- Perform dummy inference on startup to "warm up" the NPU
+
+## Performance Optimization
+
+### Latency Reduction
+- **NPU Warm-up**: Run a dummy inference (zeros) during startup to load firmware
+- **Context Caching**: Enable cache_dir in Vitis AI provider options
+- **Audio Buffering**: Use optimal sounddevice block size (1024-2048 frames)
+- **Thread Pinning**: Consider CPU affinity for audio thread to reduce jitter (optional, CachyOS scheduler is already optimized)
+
+## Error Handling & Troubleshooting
+
+### Driver Stack Issues
+- "Device not found" (xrt-smi fails) → xrt/amdxdna version mismatch; rebuild xrt-plugin-amdxdna
+- No /dev/accel/accel0 → Kernel doesn't have amdxdna; update kernel to 6.14+
+- Firmware not found → Download from AMD firmware repo or extract from Ubuntu .deb packages
+
+### Inference Failures
+- Silent CPU fallback (no NPU use) → Check XLNX_VART_FIRMWARE environment variable is set correctly
+- Input shape mismatch → Ensure audio is padded/truncated to exactly 480,000 samples
+- IOMMU fault → Use np.ascontiguousarray() on all input tensors
+
+### Input Emulation Issues
+- Virtual controller not visible in Steam → Check udev rules are applied (systemctl restart udev); create device before launching Steam
+- Stick drift in games → Verify AbsInfo ranges are exactly min=-32768, max=32767 (not 0-255)
+- Buttons not responding → Confirm kernel uinput module is loaded; check permissions on /dev/uinput
+
+## Dependencies (Python)
+- numpy (audio/tensor manipulation)
+- sounddevice (ALSA audio capture)
+- webrtcvad (voice activity detection)
+- evdev (uinput virtual device management)
+- scipy (optional; for advanced audio filtering)
+- onnxruntime (custom Vitis AI wheel; not standard PyPI)
+- pyyaml (command configuration parsing)
+
+## CachyOS-Specific Optimizations
+- System defaults to BORE or EEVDF scheduler → prioritizes interactive threads
+- amd-pstate driver in guided/active mode → fine-grained CPU frequency scaling, instant wake-up
+- x86-64-v4 compilation → full AVX-512 support for audio pre-processing
+- Rolling release → ensures latest kernel (6.14+) and firmware
+
+## Reference & Debugging
+- Verify driver stack: `xrt-smi examine`
+- Check kernel module: `lsmod | grep amdxdna`
+- Test uinput permissions: `ls -la /dev/uinput`
+- Monitor inference timing: Add logging to session.run() calls
+- Audio inspection: Use `evtest` to monitor virtual controller events

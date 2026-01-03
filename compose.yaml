@@ -1,0 +1,125 @@
+# Podman Compose configuration for vinput
+# Orchestrates vinput container with proper device access and audio setup
+#
+# Usage:
+#   podman-compose up          # Start vinput
+#   podman-compose down        # Stop vinput
+#   podman-compose build       # Rebuild container
+#
+# Note: Audio device paths may vary; adjust for your setup
+
+version: '3.8'
+
+services:
+  vinput:
+    # Container name and tags
+    container_name: vinput-dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vinput:latest
+    
+    # Interactive terminal for voice commands
+    stdin_open: true
+    tty: true
+    
+    # Device access (required for uinput and audio)
+    devices:
+      # uinput device (virtual input emulation)
+      - /dev/uinput:/dev/uinput:rw
+      
+      # Input event devices (keyboard, mouse, gamepad)
+      - /dev/input:/dev/input:ro
+      
+      # NPU device (XDNA 2 accel0)
+      # Uncomment if building on Strix Halo with XDNA 2:
+      # - /dev/accel/accel0:/dev/accel/accel0:rw
+      
+      # ALSA audio devices (for sounddevice)
+      - /dev/snd:/dev/snd:rw
+    
+    # Volume mounts
+    volumes:
+      # Project directory (read-write for development)
+      # WARNING: .dockerignore prevents .venv/ __pycache__/ from leaking into container
+      # If you have host Python packages, they are excluded via .dockerignore
+      - .:/home/vinput/vinput:rw
+      
+      # Models directory (persistent across runs)
+      - ./models:/home/vinput/vinput/models:rw
+      
+      # Cache directory (for ONNX model caching)
+      - vinput-cache:/tmp/vinput_cache
+      
+      # Audio socket (PulseAudio/ALSA)
+      # Adjust $XDG_RUNTIME_DIR based on your system
+      - /run/user/1000/pulse:/run/user/1000/pulse:ro
+    
+    # Environment variables
+    environment:
+      # Python settings
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      
+      # Force use of container's virtualenv (ignore any host Python)
+      PATH: "/home/vinput/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      VIRTUAL_ENV: "/home/vinput/.venv"
+      
+      # Audio settings
+      PULSE_SERVER: unix:/run/user/1000/pulse/native
+      
+      # NPU firmware (set to your path if available)
+      # XLNX_VART_FIRMWARE: /path/to/firmware.xclbin
+      
+      # Logging
+      LOG_LEVEL: "INFO"
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          # CPU: Use 2 cores (audio callback + inference)
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    
+    # Network (isolate from host)
+    networks:
+      - vinput-net
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Working directory
+    working_dir: /home/vinput/vinput
+    
+    # Default command (can override with `podman-compose exec vinput <cmd>`)
+    command: python src/main.py
+    
+    # Security options for rootless containers
+    security_opt:
+      - label=disable
+    
+    # Capabilities
+    cap_add:
+      - SYS_PTRACE
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "test_installation.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+# Shared network for potential multi-container setup
+networks:
+  vinput-net:
+    driver: bridge
+
+# Named volume for persistent model cache
+volumes:
+  vinput-cache:
+    driver: local
