@@ -1,0 +1,148 @@
+vinput - Voice Automation for AMD Strix Halo
+Copyright (C) 2026 Jason Huxley and contributors
+
+LICENSING
+=========
+
+This software is released under the GNU General Public License version 3.0
+or any later version (GPL-3.0-or-later).
+
+Full license text: See LICENSE.GPL-3.0 or https://www.gnu.org/licenses/gpl-3.0.html
+
+KEY PRINCIPLES
+==============
+
+1. FREE FOR EVERYONE
+   - Personal use: free
+   - Commercial use: free (with GPL obligations)
+   - Educational use: free
+   - Research use: free
+
+2. IRREVOCABLE COPYLEFT
+   - Source code must always remain available
+   - Modifications must be shared under GPL-3.0-or-later
+   - Cannot be changed to proprietary or more restrictive license
+   - Protects against corporate buyouts closing the source
+
+3. DISTRIBUTED COPYRIGHT
+   - Contributors retain copyright to their contributions
+   - No copyright assignment required
+   - No Contributor License Agreement for copyright transfer
+   - Prevents any single entity from relicensing
+
+4. PROTECTION AGAINST "CAPITALISM SNAKES"
+   - A buyer cannot close-source the project
+   - Cannot impose proprietary restrictions
+   - Cannot leverage your work without sharing improvements
+   - Modifications MUST be shared with the community
+
+WHAT THIS MEANS FOR USERS
+==========================
+
+You can:
+✓ Use vinput for any purpose (personal, commercial, research, etc.)
+✓ Modify the source code
+✓ Redistribute modified versions
+✓ Use in proprietary products (but must open-source your modifications)
+✓ Sell products that use vinput (but source must be available)
+
+You must:
+✓ Share your modifications under GPL-3.0-or-later
+✓ Include copyright and license notices
+✓ Provide access to source code
+✓ Allow others the same freedoms you have
+
+WHAT THIS MEANS FOR DEVELOPERS
+==============================
+
+By contributing, you:
+✓ Retain all copyright to your code
+✓ License it under GPL-3.0-or-later (no assignment needed)
+✓ Help protect the software from proprietary takeover
+✓ Ensure future improvements stay free
+
+You don't:
+✗ Give away copyright
+✗ Grant proprietary licensing rights
+✗ Allow relicensing to MIT/Apache/proprietary
+✗ Enable someone to close-source the project
+
+The distributed copyright IS the protection.
+
+WHY GPL-3.0?
+============
+
+- Network Clause: Prevents SaaS loophole (running modified versions as services)
+- Patent Grant: Protects against patent litigation by contributors
+- Hardware Freedom: Requires installation information for DRM'd devices
+- Strong Copyleft: Modifications must be shared
+- Widely Adopted: Used by Linux, Git, Kubernetes, MySQL, and millions of projects
+
+ABOUT COMMERCIAL USE
+====================
+
+GPL allows commercial use! You can:
+- Sell products using vinput
+- Build SaaS services
+- Offer consulting/support
+- Charge for hosting
+
+You MUST:
+- Provide source code to users
+- License modifications under GPL-3.0-or-later
+- Not impose additional restrictions
+
+"Free software" = freedom, not price.
+
+ATTRIBUTION
+===========
+
+When using vinput (modified or unmodified), provide attribution:
+
+"This software includes vinput - Voice Automation for AMD Strix Halo
+ Licensed under GPL-3.0-or-later
+ https://github.com/jasonh/vinput"
+
+THIRD-PARTY LIBRARIES
+=====================
+
+All dependencies use GPL-compatible permissive licenses:
+- numpy (BSD-3-Clause)
+- sounddevice (MIT)
+- webrtcvad (BSD)
+- evdev (BSD-3-Clause)
+- scipy (BSD-3-Clause)
+- pyyaml (MIT)
+- onnxruntime (MIT)
+
+The combined work is distributed under GPL-3.0-or-later.
+
+NO WARRANTY
+===========
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, OR NONINFRINGEMENT.
+
+For hardware-specific issues (AMD Strix Halo, XDNA 2 NPU, Linux kernel),
+the authors provide no warranty of suitability for any configuration.
+
+ENFORCEMENT
+===========
+
+GPL violations are enforced through copyright law:
+- Each contributor can independently enforce for their code
+- Software Freedom Conservancy provides legal support if needed
+- Violations typically resolved through compliance
+
+Contact for GPL questions:
+- Email: jason@minisforum-ms-m1.local
+- Subject: "vinput GPL Question"
+
+FULL LICENSE TEXT
+=================
+
+Complete GNU General Public License v3.0:
+- File: LICENSE.GPL-3.0
+- Web: https://www.gnu.org/licenses/gpl-3.0.html
+- FAQ: https://www.gnu.org/licenses/gpl-faq.html

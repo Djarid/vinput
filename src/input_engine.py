@@ -1,3 +1,7 @@
+# vinput - Voice Automation for AMD Strix Halo
+# Copyright (C) 2026 Jason Huxley
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Input engine for vinput.
 Creates virtual Xbox 360 controller via uinput for Wayland automation.

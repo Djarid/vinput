@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# vinput - Voice Automation for AMD Strix Halo
+# Copyright (C) 2026 Jason Huxley
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Quick test script to validate vinput installation without NPU hardware.
 Tests audio capture, VAD, preprocessing, and input device independently.

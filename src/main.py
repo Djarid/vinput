@@ -1,3 +1,7 @@
+# vinput - Voice Automation for AMD Strix Halo
+# Copyright (C) 2026 Jason Huxley
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Main orchestrator for vinput.
 Coordinates audio capture, inference, and input emulation in an async pipeline.
